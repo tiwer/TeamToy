@@ -97,16 +97,20 @@ function render( $data = NULL , $layout = NULL , $sharp = 'default' , $pathinfo 
 	}
 }
 
-function ajax_echo( $info )
+function ajax_header( $type = 'text/html' )
 {
 	if( !headers_sent() )
 	{
-		header("Content-Type:text/html;charset=utf-8");
+		header("Content-Type:".$type.";charset=utf-8");
 		header("Expires: Thu, 01 Jan 1970 00:00:01 GMT");
 		header("Cache-Control: no-cache, must-revalidate");
 		header("Pragma: no-cache");
 	}
-	
+}
+
+function ajax_echo( $info )
+{
+	ajax_header();
 	echo $info;
 }
 
@@ -228,20 +232,38 @@ function load( $file_path )
 // ===========================================
 // load db functions
 // ===========================================
-if( defined('SAE_APPNAME') )
-	include_once( CROOT .  'lib/db.sae.function.php' );
-else
-	include_once( CROOT .  'lib/db.function.php' );
 
-if (!function_exists('_'))
+//if( defined('SAE_APPNAME') )
+//	include_once( CROOT .  'lib/db.sae.function.php' );
+//else
+//	include_once( CROOT .  'lib/db.function.php' );
+
+// use master db on sae to void sync problem
+if( function_exists('mysqli_connect') )
+	$dbfile_postfix = '.mysqli.function.php';
+else
+	$dbfile_postfix = '.function.php';
+
+//if( defined('SAE_APPNAME') )
+//	include_once( CROOT .  'lib/db.sae'. $dbfile_postfix );
+//else
+
+include_once( CROOT .  'lib/db' . $dbfile_postfix );
+
+if (!function_exists('__'))
 {
-	function _( $string , $data = null )
+	function __( $string , $data = null )
 	{
 		if( !isset($GLOBALS['i18n']) )
 		{
 			$c = c('default_language');
-			if( strlen($c) < 1 ) $c = 'zh_cn';
-			
+			if( strlen($c) < 1 ) $c = 'zh_cn';	
+		}
+		else
+			$c = z(t($GLOBALS['i18n']));
+
+		if( !isset(  $GLOBALS['language'][$c] ) )
+		{
 			$lang_file = AROOT . 'local' . DS . basename($c) . '.lang.php';
 			if( file_exists( $lang_file ) )
 			{
@@ -249,12 +271,9 @@ if (!function_exists('_'))
 				$GLOBALS['i18n'] = $c;
 			}
 			else
-				$GLOBALS['i18n'] = 'zh_cn';
-			
-			
+			$GLOBALS['i18n'] = 'zh_cn';
 		}
 		
-		//print_r( $GLOBALS['language'][$GLOBALS['i18n']] );
 		
 		
 		
